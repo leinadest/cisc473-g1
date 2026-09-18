@@ -1,0 +1,197 @@
+\documentclass[11pt, letterpaper]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{parskip}
+\geometry{margin=1in}
+
+\definecolor{courseblue}{HTML}{002452}
+\definecolor{coursegold}{HTML}{FABD0F}
+\definecolor{coursered}{HTML}{B90E31}
+\definecolor{lightblue}{HTML}{E8EEF7}
+
+\hypersetup{colorlinks=true,linkcolor=courseblue,urlcolor=coursered}
+
+\tcbuselibrary{skins}
+\newtcolorbox{guidancebox}{enhanced,colback=lightblue,colframe=courseblue,
+  sharp corners,leftrule=4pt,left=6pt,right=6pt,top=4pt,bottom=4pt}
+
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small\textcolor{courseblue}{\textbf{CISC 473 --- Deep Learning | Fall 2026}}}
+\fancyhead[R]{\small\textcolor{courseblue}{Project Proposal}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\large\bfseries\color{courseblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{courseblue}}{}{0em}{}
+
+%% ════════════════════════════════════════════════════════════════
+%% INSTRUCTIONS FOR STUDENTS
+%% Replace every [PLACEHOLDER] with your actual content.
+%% Delete all \guidancebox blocks before submitting.
+%% Submit as a compiled PDF + .tex source in a .zip archive.
+%% ════════════════════════════════════════════════════════════════
+
+\begin{document}
+
+{\centering
+  {\Large\textbf{CISC 473: Deep Learning --- Project Proposal}}\\[0.5em]
+  {\large\textit{[P02 Zero-Reference Low-Light Image Enhancement]}}\\[0.4em]
+  {\large\textit{[P08 Abstractive Summarisation via LoRA Fine-Tuning]}}\\[0.4em]
+  {\large\textit{[P25 CLIP Few-Shot Transfer to Specialised Domains ]}}\\[0.4em]
+  \textbf{Group Members:}\\{}
+  [Andrew Oh] \quad [20284827] \quad (Role: Project Lead)\\{}
+  [Ray Shi] \quad [20404836] \quad (Role: Research Lead)\\{}
+  [Abominable Snowman] \quad [20353570] \quad (Role: Engineering Lead)\\[0.3em]
+  \textbf{GitHub Repository:} \url{https://github.com/woong5115/CISC473Project}\\[0.3em]
+  \textbf{Date:} \today\\[0.4em]
+  \rule{\linewidth}{0.4pt}
+}
+
+\section{Problem Statement and Motivation}
+
+Under low-light conditions, the images can be very distorted, with low visibility or low contrast and high noise. Improving these deteriorated images is not just aesthetic, but is absolutely vital for the successful operation of computer vision applications in other critical areas, like autonomous driving at night, underwater imaging and video surveillance.
+
+The traditional deep learning methods for enhancing images in low illumination conditions are supervised learning methods, depending on paired datasets, which are strictly aligned low-light and normal-light images. There are multiple obstacles to generalizing those models to new domains, however, particularly when targeting collections of nearly perfect pairs in dynamic environments where it's often impractical, costly, or even impossible to acquire such examples.
+
+A potential paradigm that surmounts this data restriction is the zero reference method. In particular, Zero-DCE (Guo et al., 2020) proposes to rethink the problem of light enhancement as a curve estimation problem of an image-specific nature, and is able to train a lightweight network with non-reference perceptual losses without using any paired data. The next generation of its, Zero-DCE++ (Li et al., 2021), optimizes parameters further and inference speed. Although everything they do is revolutionary in terms of their effectiveness, they do have some failure modes, such as significant color distortion, noise amplification and over-enhancement that give them some unnatural characteristics when tackling difficult situations.
+
+In this project, the challenge is to address the compelling need of developing a robust zero-reference low-light enhancement method without compromising perceptual fidelity in a wide variety of and challenging situations. To analyze the failure modes of the basic Zero-DCE and Zero-DCE++ architectures, we will first reproduce them and benchmark them from LOL. We will then suggest and implement a specific improvement to that baseline, based on an architectural or loss-based approach, that emphasizes noise reduction and color retention. Last but not least, to show the practical robustness of our improved model, we will test our testing model by conducting out-of-domain testing on the underwater image (UIEB dataset) and verify our results from a quantitative perspective by carrying out a comprehensive human perceptual user test.
+
+\section{Literature Survey}
+
+\subsection{Related Works}
+
+\paragraph{Zero-DCE (Guo et al., 2020), CVPR 2020}
+ Introduces a zero-reference curve estimation method that frames low-light enhancement as a task of estimating pixel wise light enhancement curves. It uses a lightweight deep network trained on non-reference perceptual losses which avoids the need for paired training data entirely.
+
+\paragraph{Zero-DCE++ : Li et al., 2021, TPAMI 2021}
+It replaces standard convolutions with depthwise separable convolutions to really reduce the model's parameter count and improve inference speeds while maintaining restoration quality.\ldots
+
+\paragraph{SNR-Aware : Xu et al., 2022, CVPR 2022}
+Addresses noise amplification in low-light enhancement by utilizing a Signal to Noise Ratio prior to dynamically guided feature fusion. It applies transformer mechanisms for noisy, low-SNR regions and standard convolutional operations for cleaner areas.\ldots
+
+\paragraph{MIRNet : Zamir et al., 2020, ECCV 2020}
+Provides a baseline for feature extraction and image restoration by learning representations across multiple spatial scales. It effectively preserves spatial details and color fidelity during the enhancement process.\ldots
+
+\paragraph{Water-Net : Li et al., 2019, IEEE.}
+Introduces the UIEB dataset of underwater images and provides a strong baseline for underwater domain transfer. It employs a gated fusion architecture to correct the complex color absorption and scattering unique to underwater environments.\ldots
+
+\paragraph{FUnIE-GAN : Islam et al., 2020, IEEE}
+Evaluates real-time underwater image enhancement using a generative adversarial network architecture. It provides a highly useful benchmark for contrasting computational efficiency and speeds against lightweight models like Zero-DCE++.\ldots
+
+\subsection{Open Problem}
+
+While zero-reference models like Zero-DCE and Zero-DCE++ have revolutionized low-light enhancement by removing the need for paired datasets, they suffer from a significant limitation in their loss formulation: a lack of explicit noise-suppression and strict color-constancy constraints. When these networks estimate high-order curves to aggressively brighten severely dark regions, they inevitably amplify inherent sensor noise and introduce unnatural color shifts (color distortion). Furthermore, current literature primarily evaluates these models on standard indoor or outdoor terrestrial datasets (like low light), leaving a gap in understanding how these curve-estimation networks generalize to environments with complex, non-uniform light scattering, such as underwater or extreme nighttime driving scenarios.
+
+\section{Proposed Methodology}
+
+\subsection{Baseline}
+
+Our baseline models will be Zero-DCE and Zero-DCE++. Zero-DCE is a convolutional neural network that passes low-light input images through seven convolutional layers to iteratively enhance the image. In each iteration, the enhancement is done by applying a Light-Enhancement (LE) curve parameter to each RGB channel in every pixel. To ensure the LE curve is optimized for every next iteration, numerous loss functions are used:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Spatial consistency loss:} Measures the difference between the input and output images for their internal variance in brightness of neighboring $4 \times 4$ pixel regions.
+  \item \textbf{Exposure control loss:} Measures the difference between the average brightness of pixel regions and the color gray.
+  \item \textbf{Color constancy loss:} Measures the difference between the RGB channels' brightnesses, averaged across all image pixels.
+  \item \textbf{Illumination smoothness loss:} Preserves the pattern of brightening or darkening between neighboring pixels.
+\end{itemize}
+
+The Zero-DCE++ model is primarily different in that it is faster and lighter in parameter weight. This is achieved by downsampling the input by a factor of 12 prior to computing the pixel-specific LE curves, and then upsampling the curves to map onto the original image for enhancement. The baseline dataset will be from the UIEB, and the metrics used will be shared with those listed in the evaluation plan below.
+
+\subsection{Proposed Extension}
+
+Zero-DCE++ lacks evaluation for enhancing images in underwater environments. We hypothesize that applying Zero-DCE++ to images captured underwater will expose failure modes, such as over-enhancement or color distortion. Furthermore, one weakness of the Zero-DCE is its processing of extreme low-light images, sometimes resulting in a grayish or colored tint.
+
+For the grayish tint, we hypothesize that the exposure control loss is too simplistic as its optimization pushes the entire image toward the same gray target color value. We propose that it would help to use a more dynamic target value. This dynamic value could be determined by a Max-RGB channel prior or Retinex illumination estimation, such that regions identified as shadows will be given a darker gray target while other regions will have a lighter target.
+
+For the colored tint, we speculate that the cause is in very dark pixels with low RGB channel values. Lower numerical values have greater proportional difference between one another, and this difference between RGB values can become amplified as LE curve parameters are applied and compounded iteratively on the output image. We hypothesize that applying a spatial denoiser, such as a bilateral filter or non-local means filter, to preprocess the input image's color channels could reduce instances of colored tint in the enhancement of extremely dark images.
+
+\subsection{Evaluation Plan}
+
+We will use the UIEB dataset with a train-test split of 80\% to 20\%. The training subset will be used for baseline models that require paired training data. All baselines will be evaluated on the test subset. Since the UIEB dataset is moderately sized (950 images), a total of 5 seeds will likely be sufficient for reliable results.
+
+The metrics we will use for evaluation include:
+\begin{itemize}[noitemsep]
+  \item \textbf{Peak Signal-to-Noise Ratio (PSNR):} Measure of distortion in the output image.
+  \item \textbf{Structural Similarity Index Measure (SSIM):} Measure of how closely the patterns in the output image match the input image.
+  \item \textbf{Mean Absolute Error (MAE):} Measure of how much the output image was changed from the input.
+  \item \textbf{User Study (US):} Measure of how natural the output image looks on a scale from 1 to 5.
+  \item \textbf{Perceptual Index (PI):} Measure of natural realism to the human eye.
+\end{itemize}
+
+The baseline models we will compare against include:
+\begin{itemize}[noitemsep]
+  \item Zero-DCE
+  \item Zero-DCE++
+  \item SNR-Aware
+  \item MIRNet
+  \item Water-Net
+  \item FUnIE-GAN
+\end{itemize}
+
+
+
+\subsection{Early Novel Contribution (Optional Bonus)}
+
+
+Our project will provide a novel contribution by extending the evaluation and architectural formulation of Zero-DCE++ to a new, highly challenging domain: underwater image enhancement. Underwater images suffer from severe light attenuation and color scattering that standard low-light models are not explicitly trained to handle. 
+
+Specifically, our contribution will be two fold 
+\begin{enumerate}
+    \item \textbf{Domain Transfer and Benchmarking:} We will rigorously benchmark Zero-DCE and Zero-DCE++ on the UIEB (Underwater Image Enhancement Benchmark) dataset to expose their failure modes (e.g., over-enhancement and color distortion) when applied out-of-domain.
+    \item \textbf{Lightweight Color-Preservation Loss:} We will introduce a novel, lightweight spatial-color consistency loss designed to penalize unnatural color shifts during curve estimation. 
+\end{enumerate}
+
+This will demonstrate a data efficient training strategy that allows a lightweight model to achieve perceptually pleasing results in a niche domain without requiring any paired underwater training data or adding to the network's inference time.
+ \section{Project Timeline and Roles}
+
+\begin{center}
+\begin{tabular}{lp{7cm}l}
+\toprule
+\textbf{Week} & \textbf{Tasks} & \textbf{Responsible} \\
+\midrule
+1 & Read papers, assign roles. & All \\
+2 & Setup environment, write proposal. \textbf{(Proposal due)} & Andrew, Snowman \\
+3 & Reproduce Zero-DCE baseline on low light dataset. & Snowman \\
+4 & Compare Zero-DCE++, analyze failure cases. & Ray, Snowman \\
+5 & Code proposed module, start first training run. & Snowman, Ray \\
+6 & Draft preliminary results, design user study. \textbf{(Midterm due)} & Andrew \\
+7 & Run user study, test on UIEB dataset. & Andrew, Ray \\
+8 & Run ablation studies, calculate metrics. & Ray \\
+9 & Create visual grids, clean code, draft final report. & Andrew, Snowman \\
+10 & Finalize report, prepare presentation. \textbf{(Final due)} & All \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Contribution Declaration}
+
+\begin{tabular}{lcc}
+\toprule
+\textbf{Member} & \textbf{Primary Responsibilities} & \textbf{Estimated \%} \\
+\midrule
+{Andrew Oh} & Project management, report writing. & 33.3\%  \\
+{Ray Shi}& Literature review, metrics evaluation, ablation studies. & 33.3\%  \\
+{Abominable Snowman} & Model coding, baseline reproduction, GitHub management. & 33.3\%  \\
+\bottomrule
+\end{tabular}
+
+\section{References}
+
+\begin{enumerate}[label={[\arabic*]},leftmargin=*]
+  \item Guo et al, Year. ``Zero-Reference Deep Curve Estimation for Low-Light Image Enhancement.'' \textit{CVPR}. arXiv:2001.06826.
+  \item Li et al, 2021. ``Learning to Enhance Low-Light Image via Zero-Reference Deep Curve Estimation..'' \textit{TPAMI}. arXiv:2207.08789.
+  \item Xu et al, 2022. ``SNR-Aware Low-Light Image Enhancement..'' \textit{CVPR}. rXiv:1901.05495.
+  \item Zamir et al, 2020., 2020. ``Learning Enriched Features for Real Image Restoration and Enhancement.'' \textit{ECCV}. arXiv:2003.06792.
+  \item Li et al, 2019, ``An Underwater Image Enhancement Benchmark Dataset and Beyond.'' \textit{IEEE}. arXiv:1901.05495.
+  \item Islam et al, 2020,``Fast Underwater Image Enhancement for Improved Visual Perception.'' \textit{IEEE}. arXiv:2003.11411.
+  
+\end{enumerate}
+\end{document}
