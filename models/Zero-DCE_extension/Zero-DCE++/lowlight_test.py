@@ -33,7 +33,8 @@ def lowlight(image_path):
     data_lowlight = data_lowlight.to(device).unsqueeze(0)
 
     DCE_net = model.enhance_net_nopool(scale_factor).to(device)
-    DCE_net.load_state_dict(torch.load('snapshots_Zero_DCE++/Epoch99.pth'))
+    DCE_net.load_state_dict(torch.load(
+        'snapshots_Zero_DCE++/Epoch99.pth', map_location=device))
     start = time.time()
     enhanced_image, params_maps = DCE_net(data_lowlight)
 
@@ -43,9 +44,8 @@ def lowlight(image_path):
     image_path = image_path.replace('test_data', 'result_Zero_DCE++')
 
     result_path = image_path
-    if not os.path.exists(image_path.replace('/'+image_path.split("/")[-1], '')):
-        os.makedirs(image_path.replace('/'+image_path.split("/")[-1], ''))
-    # import pdb;pdb.set_trace()
+    output_dir = os.path.dirname(result_path)
+    os.makedirs(output_dir, exist_ok=True)
     torchvision.utils.save_image(enhanced_image, result_path)
     return end_time
 
