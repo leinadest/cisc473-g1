@@ -74,13 +74,15 @@ def train(config):
 
             enhanced_image_1, enhanced_image, A = DCE_net(img_lowlight)
 
-            Loss_TV = 200*L_TV(A)
+            Loss_TV = config.loss_tv_weight*L_TV(A)
 
-            loss_spa = torch.mean(L_spa(enhanced_image, img_lowlight))
+            loss_spa = config.loss_spa_weight * \
+                torch.mean(L_spa(enhanced_image, img_lowlight))
 
-            loss_col = 5*torch.mean(L_color(enhanced_image))
+            loss_col = config.loss_col_weight * \
+                torch.mean(L_color(enhanced_image))
 
-            loss_exp = 10*torch.mean(L_exp(enhanced_image))
+            loss_exp = config.loss_exp_weight*torch.mean(L_exp(enhanced_image))
 
             # best_loss
             loss = Loss_TV + loss_spa + loss_col + loss_exp
@@ -121,6 +123,10 @@ if __name__ == "__main__":
     parser.add_argument('--pretrain_dir', type=str,
                         default="snapshots/Epoch99.pth")
     parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--loss_tv_weight', type=float, default=200)
+    parser.add_argument('--loss_spa_weight', type=float, default=1)
+    parser.add_argument('--loss_col_weight', type=float, default=5)
+    parser.add_argument('--loss_exp_weight', type=float, default=10)
 
     config = parser.parse_args()
 
